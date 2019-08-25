@@ -23,7 +23,13 @@
     {
         "ParameterKey": "PrivateSubnet2CIDR",
         "ParameterValue": "10.0.3.0/24"
+    },
+
+    {
+        "ParameterKey": "S3BucketName",
+        "ParameterValue": "linux-project-omega-bucket"
     }
+    
     
 
 

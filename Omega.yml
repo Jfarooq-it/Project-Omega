@@ -39,7 +39,25 @@ Parameters:
       Type: String
       Default: 10.0.3.0/24
 
+
+  # Project S3 Bucket
+    S3BucketName:
+      Description: S3 Bucket Name.
+      Type: String
+      Default: S3 Bucket
   
+
+
+
+
+
+
+
+
+
+
+
+
 Resources:
 
 # Creating VPC
@@ -138,7 +156,7 @@ Resources:
           Key: Name
           Value: !Sub ${ProjectName} Public Routes
 
-# Default Routing Rule - Public Rule  (Send all traffic to Internet Gateway)
+# Public Routing Rule  (Send all traffic to Internet Gateway)
   DefaultPublicRoute:
     Type: AWS::EC2::Route
     Properties:
@@ -146,14 +164,14 @@ Resources:
       DestinationCidrBlock: 0.0.0.0/0  # Rule: send all traffic to Internet Gateway. (next line)
       GatewayId: !Ref InternetGateway
 
-#  Applying routing rule to Public Subnet 1
+#  Attaching Public Subnet 1 to (Public Route) Subnet Associations 
   PublicSubnet1RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PublicRouteTable
       SubnetId: !Ref PublicSubnet1   
 
- #  Applying routing rule to Public Subnet 2
+ #  Attaching Public Subnet 2 to (Public Route) Subnet Associations 
   PublicSubnet2RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
@@ -180,14 +198,14 @@ Resources:
 #     #  DestinationCidrBlock: 0.0.0.0/0  # send all traffic to Nat Gateway (keep in inside the VPC)
 #     #  NatGatewayId: !Ref NatGateway1
   
-  #  Applying routing rule to Private Subnet 1
+  #  Attaching Private Subnet 1 to (Private Route) Subnet Associations 
   PrivateSubnet1RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PrivateRouteTable1
       SubnetId: !Ref PrivateSubnet1
   
- #  Applying routing rule to Private Subnet 2
+ #  Attaching Private Subnet 2 to (Private Route) Subnet Associations 
   PrivateSubnet2RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
@@ -250,3 +268,88 @@ Resources:
       PortRange:
         From: '0'
         To: '65535'
+
+
+ # Creating S3 Bucket   
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    Properties:
+      AccessControl: PublicRead
+      BucketName: !Ref S3BucketName
+      Tags: 
+        - 
+          Key: "Name"
+          Value: !Sub ${ProjectName} S3 Bucket
+
+
+
+ #####  Security Group for EC2 Instance  #####
+  EC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow http to our hosts and/Or SSH
+      GroupName: !Sub ${ProjectName} EC2 Security Group
+      VpcId: !Ref VPC
+      # Inbound Rule 1
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 0
+        ToPort: 65535
+        CidrIp: 0.0.0.0/0
+      # Inbound Rule 2 (FOR SSH)
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: 0.0.0.0/0
+
+      # Outbound Rule 1
+      SecurityGroupEgress:
+      - IpProtocol: tcp
+        FromPort: 0
+        ToPort: 65535
+        CidrIp: 0.0.0.0/0
+      Tags: 
+        - 
+          Key: "Name"
+          Value: !Sub ${ProjectName} EC2 Security Group
+
+#####  EC2 Instance  #####
+  EC2Instance:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      AssociatePublicIpAddress: true
+      ImageId: ami-07d0cf3af28718ef8
+      InstanceType: t2.medium
+      KeyName: GeneralKeyPair
+     # IamInstanceProfile: arn:aws:iam::0000000000:instance-profile/s3-read-only-role   # Iam role for s3
+      SecurityGroups:
+      - Ref: EC2SecurityGroup
+      BlockDeviceMappings:
+      - DeviceName: "/dev/sdk"
+        Ebs:
+          VolumeSize: '10'   # 10 GB Hard Drive Space
+          DeleteOnTermination: "true"
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          apt-get update -y
+          apt-get install apache2 -y
+          systemctl start apache2.service
+      
+      
+#####  EC2 Instance Auto Scaling  #####
+  EC2AutoScaling:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: !Sub ${ProjectName} Auto Scaling Group
+      VPCZoneIdentifier: 
+      - 
+        !Ref PublicSubnet1   
+      -
+        !Ref PublicSubnet2
+      LaunchConfigurationName: !Ref EC2Instance
+      MinSize: 1
+      MaxSize: 2
+      
+      
