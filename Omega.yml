@@ -305,7 +305,7 @@ Resources:
 
       # Outbound Rule 1
       SecurityGroupEgress:
-      - IpProtocol: tcp
+      - IpProtocol: -1
         FromPort: 0
         ToPort: 65535
         CidrIp: 0.0.0.0/0
@@ -321,7 +321,7 @@ Resources:
       AssociatePublicIpAddress: true
       ImageId: ami-07d0cf3af28718ef8
       InstanceType: t2.medium
-      KeyName: GeneralKeyPair
+      KeyName: ProjectOmega
      # IamInstanceProfile: arn:aws:iam::0000000000:instance-profile/s3-read-only-role   # Iam role for s3
       SecurityGroups:
       - Ref: EC2SecurityGroup
