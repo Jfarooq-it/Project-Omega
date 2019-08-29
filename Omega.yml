@@ -363,4 +363,15 @@ Resources:
       MinSize: 1
       MaxSize: 2
       
+# Adding RDS Instance
+  DBResource:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceClass: db.m1
+      DBName: MySQL
+      AvailabilityZone: us-east-1a
+      Tags: 
+        - 
+          Key: "Name"
+          Value: !Sub ${ProjectName} RDS Instance
       
