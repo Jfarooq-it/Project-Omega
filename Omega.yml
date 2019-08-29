@@ -277,6 +277,17 @@ Resources:
     Properties:
       AccessControl: PublicRead
       BucketName: !Ref S3BucketName
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+        - Id: GlacierRule
+          Prefix: glacier
+          Status: Enabled
+          ExpirationInDays: '365'
+          Transitions:
+            - TransitionInDays: '90'
+              StorageClass: GLACIER
       Tags: 
         - 
           Key: "Name"
@@ -321,7 +332,7 @@ Resources:
       AssociatePublicIpAddress: true
       ImageId: ami-07d0cf3af28718ef8
       InstanceType: t2.medium
-      KeyName: ProjectOmega
+      KeyName: ProjectOmega1
      # IamInstanceProfile: arn:aws:iam::0000000000:instance-profile/s3-read-only-role   # Iam role for s3
       SecurityGroups:
       - Ref: EC2SecurityGroup
