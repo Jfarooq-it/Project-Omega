@@ -363,15 +363,72 @@ Resources:
       MinSize: 1
       MaxSize: 2
       
-# Adding RDS Instance
-  DBResource:
-    Type: AWS::RDS::DBInstance
+
+# Creating DB Subnet Group
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
     Properties:
-      DBInstanceClass: db.m1
-      DBName: MySQL
-      AvailabilityZone: us-east-1a
+      DBSubnetGroupDescription: Database Subnet Group
+      DBSubnetGroupName: !Sub ${ProjectName} DB Subnet Group
+      SubnetIds: 
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
       Tags: 
         - 
           Key: "Name"
-          Value: !Sub ${ProjectName} RDS Instance
+          Value: !Sub ${ProjectName} DB Subnet Group  
+
+# Adding RDS Instance (MySQL)
+  DBResource:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceClass: db.t2.micro
+      AllocatedStorage: "20"
+      VPCSecurityGroups: 
+        - !Ref EC2SecurityGroup
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      DBInstanceIdentifier: ProjectOmegaDB
+      DBName: OmegaProject
+      Engine: MySQL
+      EngineVersion: "5.7.22"
+      MasterUsername: Testomgdb
+      MasterUserPassword: Abc123456
+      AvailabilityZone: us-east-1a
+      DeletionProtection: false
+      PubliclyAccessible: false
+      Tags: 
+        - 
+          Key: "Name"
+          Value: !Sub ${ProjectName} MySQL Instance
+      
+# Adding SNS Topic
+  SNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription: 
+        # - Endpoint: email@email.com
+        #   Protocol: email
+        # - Endpoint: 000-000-0000
+        #   Protocol: sms
+      TopicName: Omega-Updates1
+
+# Adding CloudWatch Alarm
+  # CPUAlarm:
+  #   Type: AWS::CloudWatch::Alarm
+  #   Properties:
+  #     AlarmDescription: CPU alarm for ec2 instance
+  #     AlarmActions:
+  #     - Ref: "logical name of an AWS::SNS::Topic resource"
+  #     MetricName: CPUUtilization
+  #     Namespace: AWS/EC2
+  #     Statistic: Average
+  #     Period: '60'
+  #     EvaluationPeriods: '3'
+  #     Threshold: '90'
+  #     ComparisonOperator: GreaterThanThreshold
+  #     Dimensions:
+  #     - Name: InstanceId
+  #       Value:
+  #         Ref: "logical name of an AWS::EC2::Instance resource"
+
       
